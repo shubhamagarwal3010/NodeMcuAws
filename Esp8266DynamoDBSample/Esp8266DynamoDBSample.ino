@@ -23,10 +23,6 @@ const char* pSSID = "Free Wi-Fi 2.4G"; // REPLACE with your network SSID (name)
 const char* pPassword = "bitchplease"; // REPLACE with your network password (use for WPA, or use as key for WEP)
 
 // Constants describing DynamoDB table and values being used
-const char* TABLE_NAME = "letthingsspeak-mobilehub-849318221-ESP8266AWSDemo";
-const char* HASH_KEY_NAME = "userId";
-const char* HASH_KEY_VALUE = "ESP01"; // Our sensor ID, to be REPLACED in case of multiple sensors.
-const char* RANGE_KEY_NAME = "timest";
 
 
 /* Temperature reading. */
@@ -74,7 +70,68 @@ void setup() {
     ddbClient.setDateTimeProvider(&dateTimeProvider);
 }
 
-void putTemp(int temp) {
+String getData(char* data, const char* TABLE_NAME, const char* HASH_KEY_NAME, const char* HASH_KEY_VALUE, const char* RANGE_KEY_NAME, const char* RANGE_KEY_VALUE) {
+    String val = "0";
+    /* Set the string and number values for the range and hash Keys,
+     * respectively. */
+    /* Create an Item. */
+    AttributeValue id;
+    id.setS(HASH_KEY_VALUE);
+    AttributeValue deviceId;
+    deviceId.setN(RANGE_KEY_VALUE);
+
+    /* Create key-value pairs out of the hash and range keys, and create
+     * a map out off them, which is the key. */
+    MinimalKeyValuePair < MinimalString, AttributeValue
+            > att1(HASH_KEY_NAME, id);
+    MinimalKeyValuePair < MinimalString, AttributeValue
+            > att2(RANGE_KEY_NAME, deviceId);
+    MinimalKeyValuePair<MinimalString, AttributeValue> itemArray[] = { att1, att2 };
+
+    getItemInput.setKey(MinimalMap < AttributeValue > (itemArray, 2));
+
+    /* Looking to get the R G and B values */
+    MinimalString attributesToGet[] = { data };
+    getItemInput.setAttributesToGet(
+            MinimalList < MinimalString > (attributesToGet, 1));
+     /* Set other values. */
+    getItemInput.setTableName(TABLE_NAME);
+
+    /* Perform getItem and check for errors. */
+    GetItemOutput getItemOutput = ddbClient.getItem(getItemInput,
+            actionError);
+    switch (actionError) {
+    case NONE_ACTIONERROR:
+        Serial.println("GetItem succeeded!");
+        {
+            /* Get the "item" from the getItem output. */
+            MinimalMap < AttributeValue > attributeMap =
+                    getItemOutput.getItem();
+            AttributeValue av;
+            /* Get the rgb values and set the led with them. */
+            attributeMap.get(data, av);
+            val = av.getS().getCStr();
+        }
+        break;
+    case INVALID_REQUEST_ACTIONERROR:
+        Serial.print("ERROR: ");
+        Serial.println(getItemOutput.getErrorMessage().getCStr());
+        break;
+    case MISSING_REQUIRED_ARGS_ACTIONERROR:
+        Serial.println(
+                "ERROR: Required arguments were not set for GetItemInput");
+        break;
+    case RESPONSE_PARSING_ACTIONERROR:
+        Serial.println("ERROR: Problem parsing http response of GetItem\n");
+        break;
+    case CONNECTION_ACTIONERROR:
+        Serial.println("ERROR: Connection problem");
+        break;
+    }
+    return val;
+}
+
+void putTemp(int temp, char* TABLE_NAME, const char* HASH_KEY_NAME, const char* HASH_KEY_VALUE, const char* RANGE_KEY_NAME) {
 
     /* Create an Item. */
     AttributeValue id;
@@ -128,14 +185,15 @@ void putTemp(int temp) {
     }
      /* wait to not double-record */
     delay(750);
-  
+
 }
 
 void loop() {
     reading = random(20, 30);
     Serial.print("Temperature = ");
     Serial.println(reading);
-    putTemp(reading);
-    
+    //putTemp(reading, "letthingsspeak-mobilehub-849318221-ESP8266AWSDemo", "userId", "ESP01", "timest");
+    Serial.println(getData("deviceName", "letthingsspeak-mobilehub-849318221-LetThingsSpeak", "userId", "shubhama", "deviceId", "124"));
+
     delay(2000);
 }
