@@ -10,6 +10,7 @@
 #include "AwsDb.h"
 
 
+AWSDB DB;
 // Init and connect Esp8266 WiFi to local wlan
 const char* pSSID = "Free Wi-Fi 2.4G"; // REPLACE with your network SSID (name)
 const char* pPassword = "bitchplease"; // REPLACE with your network password (use for WPA, or use as key for WEP)
@@ -43,7 +44,6 @@ void loop() {
     /* Temperature reading. */
     int reading;
     reading = random(20, 30);
-    DB.print();
     Serial.print("Temperature = ");
     Serial.println(reading);
     DB.putData("temp", reading, "letthingsspeak-mobilehub-849318221-ESP8266AWSDemo", "userId", "ESP01", "timest", dateTimeProvider.getDateTime());
