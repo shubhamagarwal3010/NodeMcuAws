@@ -33,14 +33,6 @@ Esp8266DateTimeProvider dateTimeProvider;
 
 AmazonDynamoDBClient ddbClient;
 
-/* Reused objects. */
-GetItemInput getItemInput;
-PutItemInput putItemInput;
-AttributeValue hashKey;
-AttributeValue rangeKey;
-ActionError actionError;
-
-
 void setup() {
     /* Begin serial communication. */
     Serial.begin(115200);
@@ -70,7 +62,7 @@ void setup() {
     ddbClient.setDateTimeProvider(&dateTimeProvider);
 }
 
-String getData(char* data, const char* TABLE_NAME, const char* HASH_KEY_NAME, const char* HASH_KEY_VALUE, const char* RANGE_KEY_NAME, const char* RANGE_KEY_VALUE) {
+String getData(char* data, char* TABLE_NAME, char* HASH_KEY_NAME, char* HASH_KEY_VALUE, char* RANGE_KEY_NAME, char* RANGE_KEY_VALUE) {
     String val = "0";
     /* Set the string and number values for the range and hash Keys,
      * respectively. */
@@ -87,7 +79,7 @@ String getData(char* data, const char* TABLE_NAME, const char* HASH_KEY_NAME, co
     MinimalKeyValuePair < MinimalString, AttributeValue
             > att2(RANGE_KEY_NAME, deviceId);
     MinimalKeyValuePair<MinimalString, AttributeValue> itemArray[] = { att1, att2 };
-
+    GetItemInput getItemInput;
     getItemInput.setKey(MinimalMap < AttributeValue > (itemArray, 2));
 
     /* Looking to get the R G and B values */
@@ -97,6 +89,7 @@ String getData(char* data, const char* TABLE_NAME, const char* HASH_KEY_NAME, co
      /* Set other values. */
     getItemInput.setTableName(TABLE_NAME);
 
+    ActionError actionError;
     /* Perform getItem and check for errors. */
     GetItemOutput getItemOutput = ddbClient.getItem(getItemInput,
             actionError);
@@ -131,7 +124,7 @@ String getData(char* data, const char* TABLE_NAME, const char* HASH_KEY_NAME, co
     return val;
 }
 
-void putTemp(int temp, char* TABLE_NAME, const char* HASH_KEY_NAME, const char* HASH_KEY_VALUE, const char* RANGE_KEY_NAME) {
+void putTemp(int temp, char* TABLE_NAME, char* HASH_KEY_NAME, char* HASH_KEY_VALUE, char* RANGE_KEY_NAME) {
 
     /* Create an Item. */
     AttributeValue id;
@@ -157,10 +150,12 @@ void putTemp(int temp, char* TABLE_NAME, const char* HASH_KEY_NAME, const char* 
     MinimalKeyValuePair<MinimalString, AttributeValue> itemArray[] = { att1,
             att2, att3 };
 
+    PutItemInput putItemInput;
     /* Set values for putItemInput. */
     putItemInput.setItem(MinimalMap < AttributeValue > (itemArray, 3));
     putItemInput.setTableName(TABLE_NAME);
 
+    ActionError actionError;
     /* Perform putItem and check for errors. */
     PutItemOutput putItemOutput = ddbClient.putItem(putItemInput,
             actionError);
@@ -192,8 +187,7 @@ void loop() {
     reading = random(20, 30);
     Serial.print("Temperature = ");
     Serial.println(reading);
-    //putTemp(reading, "letthingsspeak-mobilehub-849318221-ESP8266AWSDemo", "userId", "ESP01", "timest");
+    putTemp(reading, "letthingsspeak-mobilehub-849318221-ESP8266AWSDemo", "userId", "ESP01", "timest");
     Serial.println(getData("deviceName", "letthingsspeak-mobilehub-849318221-LetThingsSpeak", "userId", "shubhama", "deviceId", "124"));
-
-    delay(2000);
+    delay(5000);
 }
