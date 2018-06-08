@@ -20,18 +20,20 @@ void AWSDB::init() {
 }
 
 
-char* AWSDB::getData2(char* data, char* TABLE_NAME, char* HASH_KEY_NAME, char* HASH_KEY_VALUE) {
+char* AWSDB::getData(char* data, char* TABLE_NAME, char* HASH_KEY_NAME, int HASH_KEY_VALUE) {
   char* val = "0";
   /* Set the string and number values for the range and hash Keys,
      respectively. */
   /* Create an Item. */
-  AttributeValue userId;
-  userId.setN(HASH_KEY_VALUE);
+  char numberBuffer[4];
+  AttributeValue attributeValue;
+  sprintf(numberBuffer, "%d", HASH_KEY_VALUE);
+  attributeValue.setN(numberBuffer);
 
   /* Create key-value pairs out of the hash and range keys, and create
      a map out off them, which is the key. */
   MinimalKeyValuePair < MinimalString, AttributeValue
-  > att1(HASH_KEY_NAME, userId);
+  > att1(HASH_KEY_NAME, attributeValue);
   MinimalKeyValuePair<MinimalString, AttributeValue> itemArray[] = { att1 };
   GetItemInput getItemInput;
   getItemInput.setKey(MinimalMap < AttributeValue > (itemArray, 1));
@@ -75,17 +77,78 @@ char* AWSDB::getData2(char* data, char* TABLE_NAME, char* HASH_KEY_NAME, char* H
       Serial.println("ERROR: Connection problem");
       break;
   }
+return val;
+}
+
+char* AWSDB::getData(char* data, char* TABLE_NAME, char* HASH_KEY_NAME, char* HASH_KEY_VALUE) {
+  char* val = "0";
+  /* Set the string and number values for the range and hash Keys,
+     respectively. */
+  /* Create an Item. */
+  AttributeValue attributeValue;
+  attributeValue.setN(HASH_KEY_VALUE);
+
+  /* Create key-value pairs out of the hash and range keys, and create
+     a map out off them, which is the key. */
+  MinimalKeyValuePair < MinimalString, AttributeValue > att1(HASH_KEY_NAME, attributeValue);
+  MinimalKeyValuePair<MinimalString, AttributeValue > itemArray[] = { att1 };
+  GetItemInput getItemInput;
+  getItemInput.setKey(MinimalMap < AttributeValue > (itemArray, 1));
+
+  /* Looking to get the R G and B values */
+  MinimalString attributesToGet[] = { data };
+  getItemInput.setAttributesToGet( MinimalList < MinimalString > (attributesToGet, 1));
+  /* Set other values. */
+  getItemInput.setTableName(TABLE_NAME);
+
+  ActionError actionError;
+  /* Perform getItem and check for errors. */
+  GetItemOutput getItemOutput = ddbClient.getItem(getItemInput, actionError);
+  switch (actionError) {
+    case NONE_ACTIONERROR:
+      Serial.println("GetItem2 succeeded!");
+      {
+        /* Get the "item" from the getItem output. */
+        MinimalMap < AttributeValue > attributeMap =
+          getItemOutput.getItem();
+        AttributeValue av;
+        /* Get the rgb values and set the led with them. */
+        attributeMap.get(data, av);
+        strcpy(val, (av.getS().getCStr()));
+      }
+      break;
+    case INVALID_REQUEST_ACTIONERROR:
+      Serial.print("ERROR: ");
+      Serial.println(getItemOutput.getErrorMessage().getCStr());
+      break;
+    case MISSING_REQUIRED_ARGS_ACTIONERROR:
+      Serial.println(
+        "ERROR: Required arguments were not set for GetItemInput");
+      break;
+    case RESPONSE_PARSING_ACTIONERROR:
+      Serial.println("ERROR: Problem parsing http response of GetItem\n");
+      break;
+    case CONNECTION_ACTIONERROR:
+      Serial.println("ERROR: Connection problem");
+      break;
+  }
   return val;
 }
-char* AWSDB::getData(char* data, char* TABLE_NAME, char* HASH_KEY_NAME, char* HASH_KEY_VALUE, char* RANGE_KEY_NAME, char* RANGE_KEY_VALUE) {
+
+char* AWSDB::getData(char* data, char* TABLE_NAME, char* HASH_KEY_NAME, char* HASH_KEY_VALUE, char* RANGE_KEY_NAME, int RANGE_KEY_VALUE) {
   char* val = "0";
   /* Set the string and number values for the range and hash Keys,
      respectively. */
   /* Create an Item. */
   AttributeValue userId;
   userId.setS(HASH_KEY_VALUE);
+  
+  char numberBuffer[4];
+  AttributeValue attributeValue;
+  sprintf(numberBuffer, "%d", RANGE_KEY_VALUE);
+  
   AttributeValue rangeKeyValue;
-  rangeKeyValue.setN(RANGE_KEY_VALUE);
+  rangeKeyValue.setN(numberBuffer);
 
   /* Create key-value pairs out of the hash and range keys, and create
      a map out off them, which is the key. */
@@ -154,12 +217,9 @@ void AWSDB::putData(char* dataField, int data, char* TABLE_NAME, char* HASH_KEY_
   attributeValue.setN(numberBuffer);
 
   /* Create the Key-value pairs and make an array of them. */
-  MinimalKeyValuePair < MinimalString, AttributeValue
-  > att1(HASH_KEY_NAME, userId);
-  MinimalKeyValuePair < MinimalString, AttributeValue
-  > att2(RANGE_KEY_NAME, rangeKeyValue);
-  MinimalKeyValuePair < MinimalString, AttributeValue
-  > att3(dataField, attributeValue);
+  MinimalKeyValuePair < MinimalString, AttributeValue > att1(HASH_KEY_NAME, userId);
+  MinimalKeyValuePair < MinimalString, AttributeValue > att2(RANGE_KEY_NAME, rangeKeyValue);
+  MinimalKeyValuePair < MinimalString, AttributeValue > att3(dataField, attributeValue);
   MinimalKeyValuePair<MinimalString, AttributeValue> itemArray[] = { att1, att2, att3 };
 
   PutItemInput putItemInput;
@@ -169,8 +229,7 @@ void AWSDB::putData(char* dataField, int data, char* TABLE_NAME, char* HASH_KEY_
 
   ActionError actionError;
   /* Perform putItem and check for errors. */
-  PutItemOutput putItemOutput = ddbClient.putItem(putItemInput,
-                                actionError);
+  PutItemOutput putItemOutput = ddbClient.putItem(putItemInput, actionError);
   switch (actionError) {
     case NONE_ACTIONERROR:
       Serial.println("PutItem succeeded!");

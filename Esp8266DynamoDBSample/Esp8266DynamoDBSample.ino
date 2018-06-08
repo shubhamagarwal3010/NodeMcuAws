@@ -47,7 +47,7 @@ void loop() {
     Serial.print("Temperature = ");
     Serial.println(reading);
     DB.putData("temp", reading, "letthingsspeak-mobilehub-849318221-ESP8266AWSDemo", "userId", "ESP01", "timest", dateTimeProvider.getDateTime());
-    Serial.println(DB.getData("roomName", "letthingsspeak-mobilehub-849318221-LetThingsSpeak", "userId", "shubhama", "deviceId", "124"));
-    Serial.println(DB.getData2("ownerId", "letthingsspeak-mobilehub-849318221-device_map", "deviceId", "11101"));
+    Serial.println(DB.getData("roomName", "letthingsspeak-mobilehub-849318221-LetThingsSpeak", "userId", "shubhama", "deviceId", 124));
+    Serial.println(DB.getData("ownerId", "letthingsspeak-mobilehub-849318221-device_map", "deviceId", 11101));
     delay(5000);
 }
