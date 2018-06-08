@@ -62,6 +62,63 @@ void setup() {
     ddbClient.setDateTimeProvider(&dateTimeProvider);
 }
 
+String getData2(char* data, char* TABLE_NAME, char* HASH_KEY_NAME, char* HASH_KEY_VALUE) {
+    String val = "0";
+    /* Set the string and number values for the range and hash Keys,
+     * respectively. */
+    /* Create an Item. */
+    AttributeValue userId;
+    userId.setN(HASH_KEY_VALUE);
+
+    /* Create key-value pairs out of the hash and range keys, and create
+     * a map out off them, which is the key. */
+    MinimalKeyValuePair < MinimalString, AttributeValue
+            > att1(HASH_KEY_NAME, userId);
+    MinimalKeyValuePair<MinimalString, AttributeValue> itemArray[] = { att1 };
+    GetItemInput getItemInput;
+    getItemInput.setKey(MinimalMap < AttributeValue > (itemArray, 1));
+
+    /* Looking to get the R G and B values */
+    MinimalString attributesToGet[] = { data };
+    getItemInput.setAttributesToGet(
+            MinimalList < MinimalString > (attributesToGet, 1));
+     /* Set other values. */
+    getItemInput.setTableName(TABLE_NAME);
+
+    ActionError actionError;
+    /* Perform getItem and check for errors. */
+    GetItemOutput getItemOutput = ddbClient.getItem(getItemInput,
+            actionError);
+    switch (actionError) {
+    case NONE_ACTIONERROR:
+        Serial.println("GetItem2 succeeded!");
+        {
+            /* Get the "item" from the getItem output. */
+            MinimalMap < AttributeValue > attributeMap =
+                    getItemOutput.getItem();
+            AttributeValue av;
+            /* Get the rgb values and set the led with them. */
+            attributeMap.get(data, av);
+            val = av.getS().getCStr();
+        }
+        break;
+    case INVALID_REQUEST_ACTIONERROR:
+        Serial.print("ERROR: ");
+        Serial.println(getItemOutput.getErrorMessage().getCStr());
+        break;
+    case MISSING_REQUIRED_ARGS_ACTIONERROR:
+        Serial.println(
+                "ERROR: Required arguments were not set for GetItemInput");
+        break;
+    case RESPONSE_PARSING_ACTIONERROR:
+        Serial.println("ERROR: Problem parsing http response of GetItem\n");
+        break;
+    case CONNECTION_ACTIONERROR:
+        Serial.println("ERROR: Connection problem");
+        break;
+    }
+    return val;
+}
 String getData(char* data, char* TABLE_NAME, char* HASH_KEY_NAME, char* HASH_KEY_VALUE, char* RANGE_KEY_NAME, char* RANGE_KEY_VALUE) {
     String val = "0";
     /* Set the string and number values for the range and hash Keys,
@@ -129,10 +186,10 @@ void putData(char* dataField, int data, char* TABLE_NAME, char* HASH_KEY_NAME, c
     /* Create an Item. */
     AttributeValue userId;
     userId.setS(HASH_KEY_VALUE);
-    
+
     AttributeValue rangeKeyValue;
     rangeKeyValue.setN(RANGE_KEY_VALUE);
-    
+
 
     /* Create an AttributeValue for 'temp', convert the number to a
      * string (AttributeValue object represents numbers as strings), and
@@ -190,6 +247,7 @@ void loop() {
     Serial.print("Temperature = ");
     Serial.println(reading);
     putData("temp", reading, "letthingsspeak-mobilehub-849318221-ESP8266AWSDemo", "userId", "ESP01", "timest", dateTimeProvider.getDateTime());
-    Serial.println(getData("deviceName", "letthingsspeak-mobilehub-849318221-LetThingsSpeak", "userId", "shubhama", "deviceId", "124"));
+    Serial.println(getData("roomName", "letthingsspeak-mobilehub-849318221-LetThingsSpeak", "userId", "shubhama", "deviceId", "124"));
+    Serial.println(getData2("ownerId", "letthingsspeak-mobilehub-849318221-device_map", "deviceId", "11101"));
     delay(5000);
 }
