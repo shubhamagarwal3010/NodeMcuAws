@@ -67,17 +67,17 @@ String getData(char* data, char* TABLE_NAME, char* HASH_KEY_NAME, char* HASH_KEY
     /* Set the string and number values for the range and hash Keys,
      * respectively. */
     /* Create an Item. */
-    AttributeValue id;
-    id.setS(HASH_KEY_VALUE);
-    AttributeValue deviceId;
-    deviceId.setN(RANGE_KEY_VALUE);
+    AttributeValue userId;
+    userId.setS(HASH_KEY_VALUE);
+    AttributeValue rangeKeyValue;
+    rangeKeyValue.setN(RANGE_KEY_VALUE);
 
     /* Create key-value pairs out of the hash and range keys, and create
      * a map out off them, which is the key. */
     MinimalKeyValuePair < MinimalString, AttributeValue
-            > att1(HASH_KEY_NAME, id);
+            > att1(HASH_KEY_NAME, userId);
     MinimalKeyValuePair < MinimalString, AttributeValue
-            > att2(RANGE_KEY_NAME, deviceId);
+            > att2(RANGE_KEY_NAME, rangeKeyValue);
     MinimalKeyValuePair<MinimalString, AttributeValue> itemArray[] = { att1, att2 };
     GetItemInput getItemInput;
     getItemInput.setKey(MinimalMap < AttributeValue > (itemArray, 2));
@@ -124,29 +124,31 @@ String getData(char* data, char* TABLE_NAME, char* HASH_KEY_NAME, char* HASH_KEY
     return val;
 }
 
-void putTemp(int temp, char* TABLE_NAME, char* HASH_KEY_NAME, char* HASH_KEY_VALUE, char* RANGE_KEY_NAME) {
+void putData(char* dataField, int data, char* TABLE_NAME, char* HASH_KEY_NAME, char* HASH_KEY_VALUE, char* RANGE_KEY_NAME, const char* RANGE_KEY_VALUE) {
 
     /* Create an Item. */
-    AttributeValue id;
-    id.setS(HASH_KEY_VALUE);
-    AttributeValue timest;
-    timest.setN(dateTimeProvider.getDateTime());
+    AttributeValue userId;
+    userId.setS(HASH_KEY_VALUE);
+    
+    AttributeValue rangeKeyValue;
+    rangeKeyValue.setN(RANGE_KEY_VALUE);
+    
 
     /* Create an AttributeValue for 'temp', convert the number to a
      * string (AttributeValue object represents numbers as strings), and
      * use setN to apply that value to the AttributeValue. */
     char numberBuffer[4];
-    AttributeValue tempAttributeValue;
-    sprintf(numberBuffer, "%d", temp);
-    tempAttributeValue.setN(numberBuffer);
+    AttributeValue attributeValue;
+    sprintf(numberBuffer, "%d", data);
+    attributeValue.setN(numberBuffer);
 
     /* Create the Key-value pairs and make an array of them. */
     MinimalKeyValuePair < MinimalString, AttributeValue
-            > att1(HASH_KEY_NAME, id);
+            > att1(HASH_KEY_NAME, userId);
     MinimalKeyValuePair < MinimalString, AttributeValue
-            > att2(RANGE_KEY_NAME, timest);
+            > att2(RANGE_KEY_NAME, rangeKeyValue);
     MinimalKeyValuePair < MinimalString, AttributeValue
-            > att3("temp", tempAttributeValue);
+            > att3(dataField, attributeValue);
     MinimalKeyValuePair<MinimalString, AttributeValue> itemArray[] = { att1,
             att2, att3 };
 
@@ -187,7 +189,7 @@ void loop() {
     reading = random(20, 30);
     Serial.print("Temperature = ");
     Serial.println(reading);
-    putTemp(reading, "letthingsspeak-mobilehub-849318221-ESP8266AWSDemo", "userId", "ESP01", "timest");
+    putData("temp", reading, "letthingsspeak-mobilehub-849318221-ESP8266AWSDemo", "userId", "ESP01", "timest", dateTimeProvider.getDateTime());
     Serial.println(getData("deviceName", "letthingsspeak-mobilehub-849318221-LetThingsSpeak", "userId", "shubhama", "deviceId", "124"));
     delay(5000);
 }
